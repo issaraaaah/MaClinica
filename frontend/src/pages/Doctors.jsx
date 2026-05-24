@@ -2,7 +2,13 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getDoctors } from '../services/api';
+const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
+useEffect(() => {
+  const handleResize = () => setIsMobile(window.innerWidth <= 768);
+  window.addEventListener('resize', handleResize);
+  return () => window.removeEventListener('resize', handleResize);
+}, []);
 const specialties = ['Tous', 'Cardiologie', 'Pédiatrie', 'Neurologie', 'Dermatologie', 'Orthopédie'];
 
 const avatarColors = ['#2D9CDB', '#27AE60', '#7c3aed', '#e05d26', '#0891b2', '#be185d'];
@@ -234,5 +240,8 @@ const Doctors = () => {
     </div>
   );
 };
+padding: isMobile ? '20px 16px' : '40px'
 
+// titre
+fontSize: isMobile ? '24px' : '32px'
 export default Doctors;
