@@ -35,7 +35,7 @@ const Home = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-
+const isMobile = window.innerWidth <= 768;
   return (
     <div>
       {/* HERO */}
