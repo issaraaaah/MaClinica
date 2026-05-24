@@ -1,9 +1,8 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: 'http://localhost:5000/api'
+  baseURL: 'https://maclinica-2.onrender.com//api'
 });
-
 API.interceptors.request.use((config) => {
   const admin = JSON.parse(localStorage.getItem('admin'));
   if (admin && admin.token) {
