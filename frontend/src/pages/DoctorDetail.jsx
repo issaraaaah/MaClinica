@@ -4,18 +4,7 @@ import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 import { getDoctorById, createAppointment } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
-useEffect(() => {
-  const handleResize = () => setIsMobile(window.innerWidth <= 768);
-  window.addEventListener('resize', handleResize);
-  return () => window.removeEventListener('resize', handleResize);
-}, []);
-
-// Grid
-gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr'
-padding: isMobile ? '20px 16px' : '40px'
-maxWidth: isMobile ? '100%' : '900px'
 const DoctorDetail = () => {
   const { id } = useParams();
   const { user } = useAuth();

@@ -3,18 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
 import { getMyAppointments, cancelAppointment } from '../services/api';
 import { Link } from 'react-router-dom';
-const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
-useEffect(() => {
-  const handleResize = () => setIsMobile(window.innerWidth <= 768);
-  window.addEventListener('resize', handleResize);
-  return () => window.removeEventListener('resize', handleResize);
-}, []);
-
-// Carte appointment
-flexDirection: isMobile ? 'column' : 'row'
-padding: isMobile ? '16px' : '24px'
-padding: isMobile ? '20px 16px' : '40px'
 const statusConfig = {
   pending:   { label: 'En attente', bg: '#fff3e0', color: '#e65100', icon: '⏳' },
   confirmed: { label: 'Confirmé',   bg: '#e8f5e9', color: '#1b5e20', icon: '✅' },
