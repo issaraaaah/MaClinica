@@ -7,23 +7,13 @@ const Navbar = () => {
   const { user, logoutUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', onScroll);
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [location]);
+  useEffect(() => { setMenuOpen(false); }, [location]);
 
   const handleLogout = () => {
     logoutUser();
     navigate('/');
-    setMenuOpen(false);
   };
 
   const isActive = (path) => location.pathname === path;
@@ -36,137 +26,44 @@ const Navbar = () => {
 
   return (
     <>
-      <motion.nav
-        initial={{ y: -60, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        style={{
-          position: 'sticky', top: 0, zIndex: 100,
-          background: 'rgba(255,255,255,0.97)',
-          backdropFilter: 'blur(12px)',
-          borderBottom: '1px solid rgba(45,156,219,0.12)',
-          padding: '0 20px',
-          height: '64px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          boxShadow: scrolled ? '0 4px 24px rgba(45,156,219,0.08)' : 'none',
-          transition: 'all 0.3s ease',
-        }}
-      >
+      <nav style={{
+        position: 'sticky', top: 0, zIndex: 100,
+        background: 'rgba(255,255,255,0.97)',
+        backdropFilter: 'blur(12px)',
+        borderBottom: '1px solid rgba(45,156,219,0.12)',
+        padding: '0 16px',
+        height: '60px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        boxShadow: '0 2px 12px rgba(45,156,219,0.06)',
+      }}>
         {/* Logo */}
         <Link to="/">
-          <motion.div
-            whileHover={{ scale: 1.04 }}
-            style={{
-              fontFamily: "'Playfair Display', serif",
-              fontSize: '20px', fontWeight: 700,
-              color: 'var(--blue)',
-            }}
-          >
+          <div style={{
+            fontFamily: "'Playfair Display', serif",
+            fontSize: '18px', fontWeight: 700,
+            color: 'var(--blue)',
+          }}>
             🏥 MaClinica
-          </motion.div>
+          </div>
         </Link>
 
-        {/* Desktop Links */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '8px',
-          '@media (max-width: 768px)': { display: 'none' },
-        }} className="desktop-nav">
-          {navLinks.map((item) => (
-            <Link key={item.path} to={item.path}>
-              <motion.span
-                whileHover={{ y: -1 }}
-                style={{
-                  padding: '8px 16px', borderRadius: '10px',
-                  fontSize: '14px', fontWeight: 500,
-                  color: isActive(item.path) ? 'var(--blue)' : '#64748b',
-                  background: isActive(item.path) ? 'var(--blue-light)' : 'transparent',
-                  display: 'inline-block',
-                }}
-              >
-                {item.label}
-              </motion.span>
-            </Link>
-          ))}
-
-          {user ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: '8px',
-                background: 'var(--blue-light)', padding: '6px 14px',
-                borderRadius: '20px',
-              }}>
-                <div style={{
-                  width: '28px', height: '28px', borderRadius: '50%',
-                  background: 'var(--blue)', color: '#fff',
-                  display: 'flex', alignItems: 'center',
-                  justifyContent: 'center', fontSize: '12px', fontWeight: 700,
-                }}>
-                  {user.name?.charAt(0).toUpperCase()}
-                </div>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--blue)' }}>
-                  {user.name?.split(' ')[0]}
-                </span>
-              </div>
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                onClick={handleLogout}
-                style={{
-                  background: '#fee2e2', color: '#dc2626',
-                  border: 'none', padding: '8px 16px',
-                  borderRadius: '20px', fontSize: '13px', fontWeight: 600,
-                }}
-              >
-                Déconnexion
-              </motion.button>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <Link to="/login">
-                <motion.button
-                  whileHover={{ scale: 1.03 }}
-                  style={{
-                    background: 'transparent', color: 'var(--blue)',
-                    border: '1.5px solid var(--blue)',
-                    padding: '8px 18px', borderRadius: '20px',
-                    fontSize: '14px', fontWeight: 600,
-                  }}
-                >
-                  Connexion
-                </motion.button>
-              </Link>
-              <Link to="/register">
-                <motion.button
-                  whileHover={{ scale: 1.03 }}
-                  style={{
-                    background: 'var(--blue)', color: '#fff',
-                    border: 'none', padding: '8px 18px',
-                    borderRadius: '20px', fontSize: '14px', fontWeight: 600,
-                  }}
-                >
-                  S'inscrire
-                </motion.button>
-              </Link>
-            </div>
-          )}
-        </div>
-
-        {/* Hamburger button (mobile) */}
+        {/* Hamburger */}
         <button
           onClick={() => setMenuOpen(!menuOpen)}
-          className="hamburger"
           style={{
-            display: 'none',
             background: 'none', border: 'none',
-            fontSize: '24px', cursor: 'pointer',
-            color: '#0f172a',
+            fontSize: '22px', cursor: 'pointer',
+            color: '#0f172a', padding: '8px',
+            display: 'flex', alignItems: 'center',
           }}
         >
           {menuOpen ? '✕' : '☰'}
         </button>
-      </motion.nav>
+      </nav>
 
-      {/* Mobile Menu */}
+      {/* Menu mobile */}
       <AnimatePresence>
         {menuOpen && (
           <motion.div
@@ -174,9 +71,11 @@ const Navbar = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             style={{
-              position: 'fixed', top: '64px', left: 0, right: 0,
-              background: '#fff', zIndex: 99,
-              padding: '16px 20px',
+              position: 'fixed',
+              top: '60px', left: 0, right: 0,
+              background: '#fff',
+              zIndex: 99,
+              padding: '12px 16px 20px',
               borderBottom: '1px solid #e2e8f0',
               boxShadow: '0 8px 24px rgba(0,0,0,0.1)',
             }}
@@ -184,7 +83,8 @@ const Navbar = () => {
             {navLinks.map((item) => (
               <Link key={item.path} to={item.path}>
                 <div style={{
-                  padding: '14px 16px', borderRadius: '12px',
+                  padding: '14px 16px',
+                  borderRadius: '12px',
                   fontSize: '15px', fontWeight: 500,
                   color: isActive(item.path) ? 'var(--blue)' : '#374151',
                   background: isActive(item.path) ? 'var(--blue-light)' : 'transparent',
@@ -195,15 +95,27 @@ const Navbar = () => {
               </Link>
             ))}
 
+            <div style={{ height: '1px', background: '#e2e8f0', margin: '12px 0' }} />
+
             {user ? (
               <>
                 <div style={{
-                  padding: '14px 16px', borderRadius: '12px',
+                  padding: '12px 16px',
+                  borderRadius: '12px',
                   background: 'var(--blue-light)',
                   fontSize: '14px', fontWeight: 600,
-                  color: 'var(--blue)', marginBottom: '8px',
+                  color: 'var(--blue)', marginBottom: '10px',
+                  display: 'flex', alignItems: 'center', gap: '10px',
                 }}>
-                  👤 {user.name}
+                  <div style={{
+                    width: '32px', height: '32px', borderRadius: '50%',
+                    background: 'var(--blue)', color: '#fff',
+                    display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', fontWeight: 700,
+                  }}>
+                    {user.name?.charAt(0).toUpperCase()}
+                  </div>
+                  {user.name}
                 </div>
                 <button
                   onClick={handleLogout}
@@ -214,11 +126,11 @@ const Navbar = () => {
                     fontSize: '14px', fontWeight: 600,
                   }}
                 >
-                  Déconnexion
+                  🚪 Déconnexion
                 </button>
               </>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '8px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <Link to="/login">
                   <button style={{
                     width: '100%', padding: '14px',
@@ -244,14 +156,6 @@ const Navbar = () => {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* CSS pour mobile */}
-      <style>{`
-        @media (max-width: 768px) {
-          .desktop-nav { display: none !important; }
-          .hamburger { display: block !important; }
-        }
-      `}</style>
     </>
   );
 };
