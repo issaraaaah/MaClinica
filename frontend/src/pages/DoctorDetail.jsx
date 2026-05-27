@@ -1,255 +1,208 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
-import { getDoctorById, createAppointment } from '../services/api';
-import { useAuth } from '../context/AuthContext';
+import { getMyAppointments, cancelAppointment } from '../services/api';
+import { Link } from 'react-router-dom';
 
-const DoctorDetail = () => {
-  const { id } = useParams();
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const [doctor, setDoctor] = useState(null);
-  const [form, setForm] = useState({ date: '', time: '', notes: '' });
-  const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState(1);
+const statusConfig = {
+  pending:   { label: 'En attente', bg: '#fff3e0', color: '#e65100', icon: '⏳' },
+  confirmed: { label: 'Confirmé',   bg: '#e8f5e9', color: '#1b5e20', icon: '✅' },
+  cancelled: { label: 'Annulé',     bg: '#fce4ec', color: '#880e4f', icon: '❌' },
+};
+
+const Appointments = () => {
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('all');
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   useEffect(() => {
-    const fetch = async () => {
-      try {
-        const { data } = await getDoctorById(id);
-        setDoctor(data);
-      } catch {
-        toast.error('Médecin introuvable');
-        navigate('/doctors');
-      }
-    };
-    fetch();
-  }, [id]);
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!user) {
-      toast.error('Connectez-vous pour prendre un RDV');
-      return navigate('/login');
-    }
-    setLoading(true);
+  const fetchAppointments = async () => {
     try {
-      await createAppointment({ doctorId: id, ...form });
-      toast.success('Rendez-vous confirmé ! ✅');
-      navigate('/appointments');
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Erreur lors de la réservation');
+      const { data } = await getMyAppointments();
+      setAppointments(data);
+    } catch {
+      toast.error('Erreur lors du chargement');
     } finally {
       setLoading(false);
     }
   };
 
-  if (!doctor) return (
-    <div style={{ textAlign: 'center', padding: '80px', color: '#94a3b8' }}>
-      Chargement...
-    </div>
-  );
+  useEffect(() => { fetchAppointments(); }, []);
 
-  const inputStyle = {
-    width: '100%', padding: '13px 16px',
-    borderRadius: '12px', border: '1.5px solid #e2e8f0',
-    fontSize: '14px', background: '#f8fafc',
-    outline: 'none', fontFamily: 'inherit',
-    transition: 'border 0.2s',
+  const handleCancel = async (id) => {
+    if (!window.confirm('Annuler ce rendez-vous ?')) return;
+    try {
+      await cancelAppointment(id);
+      toast.success('Rendez-vous annulé');
+      fetchAppointments();
+    } catch {
+      toast.error('Erreur lors de l\'annulation');
+    }
   };
 
+  const filtered = appointments.filter(a =>
+    filter === 'all' ? true : a.status === filter
+  );
+
   return (
-    <div style={{ padding: '40px', maxWidth: '900px', margin: '0 auto' }}>
+    <div style={{ padding: isMobile ? '20px 16px' : '40px', maxWidth: '800px', margin: '0 auto' }}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '24px',
-        }}
+        style={{ marginBottom: '24px' }}
       >
-        {/* Carte médecin */}
+        <h1 style={{
+          fontFamily: "'Playfair Display', serif",
+          fontSize: isMobile ? '24px' : '30px',
+          fontWeight: 700, color: '#0f172a', marginBottom: '6px',
+        }}>
+          📅 Mes Rendez-vous
+        </h1>
+        <p style={{ color: '#94a3b8', fontSize: '14px' }}>
+          {appointments.length} rendez-vous au total
+        </p>
+      </motion.div>
+
+      {/* Filtres */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
+        {[
+          { key: 'all',       label: 'Tous'          },
+          { key: 'pending',   label: '⏳ En attente'  },
+          { key: 'confirmed', label: '✅ Confirmés'   },
+          { key: 'cancelled', label: '❌ Annulés'     },
+        ].map(f => (
+          <motion.button
+            key={f.key}
+            whileTap={{ scale: 0.96 }}
+            onClick={() => setFilter(f.key)}
+            style={{
+              padding: '7px 14px', borderRadius: '20px',
+              border: '1.5px solid',
+              borderColor: filter === f.key ? 'var(--blue)' : '#e2e8f0',
+              background: filter === f.key ? 'var(--blue-light)' : '#fff',
+              color: filter === f.key ? 'var(--blue)' : '#64748b',
+              fontSize: '12px', fontWeight: 600,
+            }}
+          >
+            {f.label}
+          </motion.button>
+        ))}
+      </div>
+
+      {loading ? (
+        <p style={{ textAlign: 'center', color: '#94a3b8', padding: '40px' }}>Chargement...</p>
+      ) : filtered.length === 0 ? (
         <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.1 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           style={{
-            background: '#fff', borderRadius: '24px',
-            overflow: 'hidden',
+            textAlign: 'center', padding: '50px 20px',
+            background: '#fff', borderRadius: '20px',
             border: '1px solid #f1f5f9',
           }}
         >
-          <div style={{
-            background: 'linear-gradient(135deg, #0f172a, #185fa5)',
-            padding: '36px 24px',
-            textAlign: 'center',
-          }}>
-            <motion.div
-              animate={{ scale: [1, 1.05, 1] }}
-              transition={{ duration: 3, repeat: Infinity }}
-              style={{
-                width: '90px', height: '90px',
-                borderRadius: '50%',
-                background: 'rgba(255,255,255,0.15)',
-                border: '3px solid rgba(255,255,255,0.3)',
-                display: 'flex', alignItems: 'center',
-                justifyContent: 'center', fontSize: '40px',
-                margin: '0 auto 16px',
-              }}
-            >
-              👨‍⚕️
-            </motion.div>
-            <h2 style={{
-              fontFamily: "'Playfair Display', serif",
-              fontSize: '22px', fontWeight: 700,
-              color: '#fff', marginBottom: '6px',
-            }}>
-              {doctor.name}
-            </h2>
-            <p style={{
-              color: '#7dd3fc', fontSize: '14px',
-              fontWeight: 600,
-            }}>
-              {doctor.specialty}
-            </p>
-          </div>
-
-          <div style={{ padding: '24px' }}>
-            {[
-              { icon: '⏱', label: 'Expérience', value: `${doctor.experience} ans` },
-              { icon: '⭐', label: 'Note', value: `${doctor.rating || 5.0} / 5.0` },
-              { icon: '📅', label: 'Disponibilités', value: doctor.availability?.length + ' créneaux' },
-            ].map((item, i) => (
-              <div key={i} style={{
-                display: 'flex', alignItems: 'center',
-                gap: '12px', padding: '12px 0',
-                borderBottom: i < 2 ? '1px solid #f1f5f9' : 'none',
-              }}>
-                <span style={{ fontSize: '20px' }}>{item.icon}</span>
-                <div>
-                  <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 500 }}>
-                    {item.label}
-                  </div>
-                  <div style={{ fontSize: '15px', fontWeight: 600, color: '#0f172a' }}>
-                    {item.value}
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            {doctor.availability?.length > 0 && (
-              <div style={{ marginTop: '16px' }}>
-                <p style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 500, marginBottom: '10px' }}>
-                  CRÉNEAUX DISPONIBLES
-                </p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  {doctor.availability.map((slot, i) => (
-                    <span key={i} style={{
-                      background: 'var(--blue-light)',
-                      color: 'var(--blue)',
-                      padding: '4px 12px',
-                      borderRadius: '20px',
-                      fontSize: '12px',
-                      fontWeight: 600,
-                    }}>
-                      {slot}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </motion.div>
-
-        {/* Formulaire RDV */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2 }}
-          style={{
-            background: '#fff', borderRadius: '24px',
-            padding: '32px', border: '1px solid #f1f5f9',
-          }}
-        >
-          <h3 style={{
-            fontFamily: "'Playfair Display', serif",
-            fontSize: '22px', fontWeight: 700,
-            color: '#0f172a', marginBottom: '6px',
-          }}>
-            📅 Prendre un RDV
-          </h3>
-          <p style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '28px' }}>
-            Choisissez une date et un créneau
+          <div style={{ fontSize: '48px', marginBottom: '12px' }}>📭</div>
+          <p style={{ fontSize: '15px', color: '#94a3b8', marginBottom: '16px' }}>
+            Aucun rendez-vous trouvé
           </p>
-
-          <form onSubmit={handleSubmit}>
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '6px' }}>
-                Date du rendez-vous
-              </label>
-              <input
-                style={inputStyle}
-                type="date"
-                value={form.date}
-                min={new Date().toISOString().split('T')[0]}
-                onChange={(e) => setForm({ ...form, date: e.target.value })}
-                required
-                onFocus={e => e.target.style.borderColor = 'var(--blue)'}
-                onBlur={e => e.target.style.borderColor = '#e2e8f0'}
-              />
-            </div>
-
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '6px' }}>
-                Heure
-              </label>
-              <input
-                style={inputStyle}
-                type="time"
-                value={form.time}
-                onChange={(e) => setForm({ ...form, time: e.target.value })}
-                required
-                onFocus={e => e.target.style.borderColor = 'var(--blue)'}
-                onBlur={e => e.target.style.borderColor = '#e2e8f0'}
-              />
-            </div>
-
-            <div style={{ marginBottom: '24px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '6px' }}>
-                Notes (optionnel)
-              </label>
-              <textarea
-                style={{ ...inputStyle, height: '90px', resize: 'vertical' }}
-                placeholder="Décrivez brièvement votre motif de consultation..."
-                value={form.notes}
-                onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                onFocus={e => e.target.style.borderColor = 'var(--blue)'}
-                onBlur={e => e.target.style.borderColor = '#e2e8f0'}
-              />
-            </div>
-
+          <Link to="/doctors">
             <motion.button
-              whileHover={{ scale: 1.02, background: '#1e8a3c' }}
-              whileTap={{ scale: 0.98 }}
-              type="submit"
-              disabled={loading}
+              whileTap={{ scale: 0.97 }}
               style={{
-                width: '100%', padding: '15px',
-                background: loading ? '#94a3b8' : 'var(--green)',
-                color: '#fff', border: 'none',
-                borderRadius: '14px', fontSize: '15px',
-                fontWeight: 700, transition: 'all 0.2s',
+                background: 'var(--blue)', color: '#fff',
+                border: 'none', padding: '12px 28px',
+                borderRadius: '12px', fontSize: '14px', fontWeight: 700,
               }}
             >
-              {loading ? '⏳ Confirmation...' : '✅ Confirmer le rendez-vous'}
+              Prendre un RDV
             </motion.button>
-          </form>
+          </Link>
         </motion.div>
-      </motion.div>
+      ) : (
+        <AnimatePresence>
+          {filtered.map((appt, i) => {
+            const s = statusConfig[appt.status];
+            return (
+              <motion.div
+                key={appt._id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ delay: i * 0.08 }}
+                style={{
+                  background: '#fff', borderRadius: '18px',
+                  padding: isMobile ? '16px' : '22px',
+                  marginBottom: '12px',
+                  border: '1px solid #f1f5f9',
+                  display: 'flex',
+                  flexDirection: isMobile ? 'column' : 'row',
+                  alignItems: isMobile ? 'flex-start' : 'center',
+                  gap: '14px',
+                }}
+              >
+                <div style={{
+                  width: '48px', height: '48px', borderRadius: '14px',
+                  background: 'var(--blue-light)',
+                  display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', fontSize: '22px', flexShrink: 0,
+                }}>
+                  👨‍⚕️
+                </div>
+
+                <div style={{ flex: 1 }}>
+                  <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0f172a', marginBottom: '3px' }}>
+                    {appt.doctorId?.name || 'Médecin'}
+                  </h3>
+                  <p style={{ fontSize: '12px', color: 'var(--blue)', fontWeight: 600, marginBottom: '4px' }}>
+                    {appt.doctorId?.specialty}
+                  </p>
+                  <p style={{ fontSize: '12px', color: '#94a3b8' }}>
+                    📅 {appt.date} · ⏰ {appt.time}
+                  </p>
+                </div>
+
+                <div style={{
+                  display: 'flex',
+                  flexDirection: isMobile ? 'row' : 'column',
+                  alignItems: isMobile ? 'center' : 'flex-end',
+                  gap: '8px',
+                  width: isMobile ? '100%' : 'auto',
+                  justifyContent: isMobile ? 'space-between' : 'flex-end',
+                }}>
+                  <span style={{
+                    background: s.bg, color: s.color,
+                    padding: '4px 12px', borderRadius: '20px',
+                    fontSize: '12px', fontWeight: 700,
+                  }}>
+                    {s.icon} {s.label}
+                  </span>
+                  {appt.status !== 'cancelled' && (
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => handleCancel(appt._id)}
+                      style={{
+                        background: '#fee2e2', color: '#dc2626',
+                        border: 'none', padding: '6px 14px',
+                        borderRadius: '10px', fontSize: '12px', fontWeight: 600,
+                      }}
+                    >
+                      Annuler
+                    </motion.button>
+                  )}
+                </div>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+      )}
     </div>
   );
 };
 
-export default DoctorDetail;
+export default Appointments;
