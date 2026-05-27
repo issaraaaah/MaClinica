@@ -21,23 +21,28 @@ function App() {
         <ToastContainer
           position="top-right"
           autoClose={3000}
-          toastStyle={{ borderRadius: '12px', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+          toastStyle={{
+            borderRadius: '12px',
+            fontFamily: "'Plus Jakarta Sans', sans-serif"
+          }}
         />
-        <Routes>
-          <Route path="/"            element={<Home />} />
-          <Route path="/login"       element={<Login />} />
-          <Route path="/register"    element={<Register />} />
-          <Route path="/doctors"     element={<Doctors />} />
-          <Route path="/doctors/:id" element={<DoctorDetail />} />
-          <Route
-            path="/appointments"
-            element={
-              <PrivateRoute>
-                <Appointments />
-              </PrivateRoute>
-            }
-          />
-        </Routes>
+        <div style={{ width: '100%', overflowX: 'hidden' }}>
+          <Routes>
+            <Route path="/"            element={<Home />} />
+            <Route path="/login"       element={<Login />} />
+            <Route path="/register"    element={<Register />} />
+            <Route path="/doctors"     element={<Doctors />} />
+            <Route path="/doctors/:id" element={<DoctorDetail />} />
+            <Route
+              path="/appointments"
+              element={
+                <PrivateRoute>
+                  <Appointments />
+                </PrivateRoute>
+              }
+            />
+          </Routes>
+        </div>
       </Router>
     </AuthProvider>
   );
